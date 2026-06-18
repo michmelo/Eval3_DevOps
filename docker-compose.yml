@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  # Capa de Datos (Base de Datos)
+  db:
+    image: mysql:8
+    container_name: tienda-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: admin123
+      MYSQL_DATABASE: tienda_perritos
+    ports:
+      - "3307:3306"
+    volumes:
+      - dbdata:/var/lib/mysql
+      # Opcional: si tienes un script sql inicial, lo puedes mapear aquí:
+      # - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  # Capa de Aplicación (Backend)
+  backend:
+    build: ./backend
+    container_name: tienda-backend
+    restart: always
+    environment:
+      - DB_HOST=db       # Se usa el nombre del servicio como Host en la red de Docker
+      - DB_USER=root
+      - DB_PASSWORD=admin123
+      - DB_NAME=tienda_perritos
+      - DB_PORT=3306
+    ports:
+      - "3001:3001"
+    depends_on:
+      - db
+
+  # Capa Web (Frontend)
+  frontend:
+    build: ./frontend
+    container_name: tienda-frontend
+    restart: always
+    ports:
+      - "8081:80"        # Accederás desde tu navegador en http://localhost:8080
+    depends_on:
+      - backend
+
+volumes:
+  dbdata:                # Asegura la persistencia de los datos locales
