@@ -48,11 +48,14 @@ jobs:
       run: |
         aws eks update-kubeconfig --region us-east-1 --name Eval3-eks-v1
         
-        # Aplicar manifiestos base
+        # Obtenemos la URL del registro desde el output del paso anterior
+        REGISTRY=${{ steps.login-ecr.outputs.registry }}
+        
+        # Usamos sed para reemplazar el marcador por la URL real en los archivos
+        sed -i "s|REPLACE_IMAGE|$REGISTRY/tienda-backend:v1|g" k8s/backend.yaml
+        sed -i "s|REPLACE_IMAGE|$REGISTRY/tienda-frontend:v1|g" k8s/frontend.yaml
+        
+        # Aplicamos los cambios
         kubectl apply -f k8s/db.yaml
         kubectl apply -f k8s/backend.yaml
         kubectl apply -f k8s/frontend.yaml
-
-        # Actualizar la imagen del despliegue dinámicamente con la URL real de ECR
-        kubectl set image deployment/tienda-backend backend=${{ steps.login-ecr.outputs.registry }}/tienda-backend:v1
-        kubectl set image deployment/tienda-frontend frontend=${{ steps.login-ecr.outputs.registry }}/tienda-frontend:v1
