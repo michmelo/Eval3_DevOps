@@ -39,3 +39,10 @@ spec:
       port: 3001
       targetPort: 3001
   type: ClusterIP
+  spec:
+      imagePullSecrets:
+      - name: ecr-registry-secret  # <-- Esta línea es la que hace la magia
+      containers:
+      - name: backend
+        image: 440480743039.dkr.ecr.us-east-1.amazonaws.com/tienda-backend:v1
+        ...
