@@ -48,9 +48,9 @@ jobs:
       run: |
         aws eks update-kubeconfig --region us-east-1 --name Eval3-eks-v1
         
-        # Modificar dinámicamente los manifiestos con el nuevo ID de cuenta de AWS
-        sed -i "s/440480743039/${{ steps.login-ecr.outputs.registry }}/g" k8s/backend.yaml
-        sed -i "s/440480743039/${{ steps.login-ecr.outputs.registry }}/g" k8s/frontend.yaml
-        
+        # El comando sed sustituye la palabra "ECR_REGISTRY" que pusimos en el YAML por el valor real que generó el login de ECR
+        sed -i "s|ECR_REGISTRY|${{ steps.login-ecr.outputs.registry }}|g" k8s/backend.yaml
+        sed -i "s|ECR_REGISTRY|${{ steps.login-ecr.outputs.registry }}|g" k8s/frontend.yaml
+
         kubectl apply -f k8s/backend.yaml
         kubectl apply -f k8s/frontend.yaml

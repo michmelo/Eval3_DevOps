@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: 440480743039.dkr.ecr.us-east-1.amazonaws.com/tienda-frontend:v1
+        image: ECR_REGISTRY/tienda-frontend:v1
         ports:
         - containerPort: 80
 ---
@@ -32,10 +32,3 @@ spec:
       port: 80
       targetPort: 80
   type: LoadBalancer # Crea un Balanceador de Carga en AWS con una IP pública para los usuarios
-spec:
-    imagePullSecrets:
-    - name: ecr-registry-secret  # <-- Esta línea es la que hace la magia
-    containers:
-    - name: backend
-      image: 440480743039.dkr.ecr.us-east-1.amazonaws.com/tienda-backend:v1
-      ...
