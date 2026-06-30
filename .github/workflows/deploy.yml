@@ -1,61 +1,33 @@
-name: DevOps EFT Pipeline CI/CD
+name: Deploy to ECS
 
 on:
   push:
-    branches: [ "main" ] # Se activa al hacer push a la rama main
+    branches: [ "main" ] # Se ejecuta cuando subes código a la rama main
 
 jobs:
-  build-and-deploy:
+  build-and-push:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout Code
+    - name: Descargar el código
       uses: actions/checkout@v3
 
-    # 1. Configurar credenciales dinámicas de AWS Academy
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v2
+    - name: Configurar credenciales de AWS
+      uses: aws-actions/configure-aws-credentials@v1
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
-        aws-region: us-east-1
+        aws-region: ${{ secrets.AWS_REGION }}
 
-    # 2. Iniciar sesión en Amazon ECR
-    - name: Login to Amazon ECR
+    - name: Iniciar sesión en Amazon ECR
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v1
 
-    # 3. Crear repositorios en ECR si no existen
-    - name: Create ECR Repositories if missing
+    - name: Construir y subir Frontend
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
       run: |
-        aws ecr create-repository --repository-name tienda-backend || true
-        aws ecr create-repository --repository-name tienda-frontend || true
+        docker build -t $ECR_REGISTRY/tienda-frontend:latest ./frontend
+        docker push $ECR_REGISTRY/tienda-frontend:latest
 
-    # 4. Construir y Subir Imagen del Backend
-    - name: Build and Push Backend to ECR
-      run: |
-        docker build -t ${{ steps.login-ecr.outputs.registry }}/tienda-backend:v1 ./backend
-        docker push ${{ steps.login-ecr.outputs.registry }}/tienda-backend:v1
-
-    # 5. Construir y Subir Imagen del Frontend
-    - name: Build and Push Frontend to ECR
-      run: |
-        docker build -t ${{ steps.login-ecr.outputs.registry }}/tienda-frontend:v1 ./frontend
-        docker push ${{ steps.login-ecr.outputs.registry }}/tienda-frontend:v1
-
-    # 6. Conectarse al clúster EKS y Desplegar Manifiestos
-    - name: Deploy to Amazon EKS
-      run: |
-        aws eks update-kubeconfig --region us-east-1 --name Eval3-eks-v1
-        
-        # Obtenemos la URL del registro desde el output del paso anterior
-        REGISTRY=${{ steps.login-ecr.outputs.registry }}
-        
-        # Usamos sed para reemplazar el marcador por la URL real en los archivos
-        sed -i "s|REPLACE_IMAGE|$REGISTRY/tienda-backend:v1|g" k8s/backend.yaml
-        sed -i "s|REPLACE_IMAGE|$REGISTRY/tienda-frontend:v1|g" k8s/frontend.yaml
-        
-        # Aplicamos los cambios
-        kubectl apply -f k8s/db.yaml
-        kubectl apply -f k8s/backend.yaml
-        kubectl apply -f k8s/frontend.yaml
+    # (Puedes copiar y pegar el bloque de arriba para el backend y la db cambiando la carpeta y el nombre)
